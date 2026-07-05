@@ -6,7 +6,7 @@
 
 ## What Is KERNELMIND?
 
-KERNELMIND is a production-grade agentic ML compiler and GPU kernel optimizer for PyTorch models. Given any `torch.nn.Module`, it parses the model into a computational graph, applies classical compiler passes, consults a Claude LLM agent for advanced analysis, generates hardware-specific GPU kernels, verifies correctness, and benchmarks the result — all automatically.
+KERNELMIND is a production-grade agentic ML compiler and GPU kernel optimizer for PyTorch models. Given any `torch.nn.Module`, it parses the model into a computational graph, applies classical compiler passes, consults an **NVIDIA Nemotron Super** LLM agent (running locally via Ollama — no API key required) for advanced analysis, generates hardware-specific GPU kernels, verifies correctness, and benchmarks the result — all automatically.
 
 **Supported hardware:** Apple Silicon M-series (Metal), NVIDIA GPUs (Triton), CPU fallback.
 
@@ -32,7 +32,7 @@ PyTorch Model -> Parse -> Graph Optimize -> LLM Agent -> Kernel Generate -> Comp
 |---------------------|-----------------------------------|--------------------------------------------------------------|
 | 1. Parse            | `core/model_parser.py`            | FX-traces `nn.Module` into a DAG with shape/dtype inference  |
 | 2. Optimize         | `core/optimizer.py`               | Constant fold → DCE → CSE → operator fusion → layout opt     |
-| 3. LLM Agent        | `agent/llm_agent.py`              | Serializes graph; gets fusion/layout suggestions from Claude |
+| 3. LLM Agent        | `agent/ollama_optimizer.py`       | Serializes graph; gets fusion/layout suggestions from Nemotron Super |
 | 4. Decide           | `agent/decision_engine.py`.       | Filters suggestions by hardware limits & numerical safety    |
 | 5. Generate         | `kernels/generator.py`            | Emits Metal (MSL) or Triton kernel source from decisions     |
 | 6. Compile & Verify | `metal_backend.py`, `verifier.py` | Compiles, checks numerics, benchmarks                        |
@@ -52,8 +52,10 @@ PyTorch Model -> Parse -> Graph Optimize -> LLM Agent -> Kernel Generate -> Comp
 ### `agent/` — LLM Intelligence
 | File | Role |
 |------|------|
-| `llm_agent.py` | Sends optimized graph to Claude API; receives structured optimization suggestions |
+| `ollama_optimizer.py` | Sends graph to local Nemotron Super via Ollama; receives structured optimization suggestions |
 | `decision_engine.py` | Scores and filters suggestions against hardware constraints and risk |
+| `ollama_errors.py` | Custom exception hierarchy with how-to-fix hints |
+| `ollama_config.py` (in `config/`) | Connection settings, env-var overrides, health-check |
 
 ### `kernels/` — Code Generation
 | File | Role |
@@ -92,7 +94,7 @@ PyTorch Model -> Parse -> Graph Optimize -> LLM Agent -> Kernel Generate -> Comp
 |---------------|---------------------------|---------------------------------------------------------|
 | Language.     | Python 3.10+              | PyTorch and Triton ecosystem compatibility              |
 | Graph tracing | PyTorch FX                | Symbolic tracing without model modifications            |
-| LLM           | Anthropic Claude          | Best-in-class reasoning for novel optimization patterns |
+| LLM           | NVIDIA Nemotron Super (Ollama)    | Local inference — no API costs, no API key required             |
 | Apple GPU     | Metal Performance Shaders | Native Apple Silicon acceleration                       |
 | NVIDIA GPU    | OpenAI Triton             | Python-level kernels without raw CUDA                   |
 | Numerics      | NumPy                     | CPU reference for correctness verification              |

@@ -20,11 +20,10 @@ class Config:
     DEVICE_TYPE: DeviceType = DeviceType.METAL
     USE_FALLBACK: bool = True
     
-    # LLM Configuration
-    LLM_MODEL: str = "claude-3-5-sonnet-20241022"
-    LLM_TEMPERATURE: float = 0.7
-    LLM_MAX_TOKENS: int = 2000
-    LLM_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
+    # LLM Configuration (Ollama / Nemotron Super — no API key required)
+    LLM_MODEL: str = os.getenv("OLLAMA_MODEL", "nvidia/nemotron-super")
+    LLM_TEMPERATURE: float = float(os.getenv("OLLAMA_TEMPERATURE", "0.7"))
+    LLM_MAX_TOKENS: int = int(os.getenv("OLLAMA_MAX_TOKENS", "2000"))
     
     # Optimization Configuration
     OPTIMIZATION_LEVEL: OptimizationLevel = OptimizationLevel.HIGH
@@ -74,10 +73,16 @@ class Config:
     
     @classmethod
     def validate(cls):
-        if cls.LLM_API_KEY is None:
-            raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+        """Validate configuration.
+
+        Checks Ollama connectivity instead of an API key — no cloud credentials
+        are required with the Nemotron Super / Ollama backend.
+        """
         if cls.OPTIMIZATION_LEVEL not in OptimizationLevel:
             raise ValueError("Invalid optimization level")
+        # Delegate LLM reachability check to OllamaConfig.
+        from kernelmind.agent.ollama_config import OllamaConfig
+        OllamaConfig().validate()
         return True
 
 config = Config()

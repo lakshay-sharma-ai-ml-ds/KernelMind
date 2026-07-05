@@ -19,7 +19,7 @@ def print_banner():
 ║                                                                ║
 ║     KERNELMIND: Agentic ML Compiler & GPU Kernel Optimizer     ║
 ║                                                                ║
-║   Analyze • Optimize • Generate • Benchmark • Deploy           ║
+║       Analyze , Optimize , Generate , Benchmark , Deploy       ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 
